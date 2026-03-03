@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Lightbox from "@/components/Lightbox";
@@ -19,13 +19,54 @@ const allPhotos = [
   { src: photo6, title: "Misty Forest", category: "Nature" },
 ];
 
-const portfolioLayout: Array<{ span: string; indices: number[] }> = [
-  { span: "full", indices: [0] },
-  { span: "two-third", indices: [1] },
-  { span: "third", indices: [2] },
-  { span: "half", indices: [3, 4] },
-  { span: "full", indices: [5] },
-];
+const PortfolioItem = ({
+  photo,
+  index,
+  onClick,
+}: {
+  photo: (typeof allPhotos)[0];
+  index: number;
+  onClick: () => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const y = useTransform(scrollYProgress, [0, 1], [30, -30]);
+  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.96, 1, 1, 0.96]);
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.5, 1, 1, 0.5]);
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{ scale, opacity }}
+      className="group relative overflow-hidden cursor-pointer"
+      onClick={onClick}
+    >
+      <motion.div style={{ y }}>
+        <div className="w-full overflow-hidden" style={{ aspectRatio: "2.35 / 1" }}>
+          <img
+            src={photo.src}
+            alt={photo.title}
+            className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110"
+            loading="lazy"
+          />
+        </div>
+      </motion.div>
+      <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end pointer-events-none">
+        <div className="p-6 md:p-10">
+          <span className="font-display text-xs tracking-[0.3em] text-muted-foreground block mb-1">
+            {photo.category} — {String(index + 1).padStart(2, "0")}
+          </span>
+          <h3 className="font-display text-xl md:text-2xl tracking-wider text-foreground">
+            {photo.title}
+          </h3>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 const Portfolio = () => {
   const [selected, setSelected] = useState<{ src: string; title: string } | null>(null);
@@ -34,7 +75,7 @@ const Portfolio = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-32 pb-24">
-        <div className="max-w-[1800px] mx-auto px-4">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -44,54 +85,17 @@ const Portfolio = () => {
             PORTFOLIO
           </motion.h1>
 
-          <div className="flex flex-col gap-3">
-            {portfolioLayout.map((row, rowIdx) => (
-              <div key={rowIdx} className="flex gap-3">
-                {row.indices.map((photoIdx) => {
-                  const photo = allPhotos[photoIdx];
-                  if (!photo) return null;
-
-                  const widthClass =
-                    row.span === "full"
-                      ? "w-full"
-                      : row.span === "half"
-                      ? "w-1/2"
-                      : row.span === "third"
-                      ? "w-[38%]"
-                      : "w-[62%]";
-
-                  return (
-                    <motion.div
-                      key={photo.title}
-                      initial={{ opacity: 0, y: 40 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-50px" }}
-                      transition={{ duration: 0.7, delay: photoIdx * 0.05 }}
-                      className={`${widthClass} group relative overflow-hidden cursor-pointer flex-shrink-0`}
-                      style={{ aspectRatio: "2.35 / 1" }}
-                      onClick={() => setSelected(photo)}
-                    >
-                      <img
-                        src={photo.src}
-                        alt={photo.title}
-                        className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end">
-                        <div className="p-8">
-                          <p className="font-display text-xs tracking-[0.2em] text-muted-foreground mb-1">
-                            {photo.category}
-                          </p>
-                          <h3 className="font-display text-xl tracking-wider text-foreground">
-                            {photo.title}
-                          </h3>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            ))}
+          <div className="flex flex-col gap-6">
+            <PortfolioItem photo={allPhotos[0]} index={0} onClick={() => setSelected(allPhotos[0])} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PortfolioItem photo={allPhotos[1]} index={1} onClick={() => setSelected(allPhotos[1])} />
+              <PortfolioItem photo={allPhotos[2]} index={2} onClick={() => setSelected(allPhotos[2])} />
+            </div>
+            <PortfolioItem photo={allPhotos[3]} index={3} onClick={() => setSelected(allPhotos[3])} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PortfolioItem photo={allPhotos[4]} index={4} onClick={() => setSelected(allPhotos[4])} />
+              <PortfolioItem photo={allPhotos[5]} index={5} onClick={() => setSelected(allPhotos[5])} />
+            </div>
           </div>
         </div>
       </div>
