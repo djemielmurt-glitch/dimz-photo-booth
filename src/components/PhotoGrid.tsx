@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import photo1 from "@/assets/photo1.jpg";
 import photo2 from "@/assets/photo2.jpg";
 import photo3 from "@/assets/photo3.jpg";
@@ -17,76 +18,96 @@ const photos = [
   { src: photo6, title: "Misty Forest" },
 ];
 
-// Layout: "full" = full width, "half" = 50%, "third" = 33%
-const layout: Array<{ span: string; indices: number[] }> = [
-  { span: "full", indices: [0] },
-  { span: "half", indices: [1, 2] },
-  { span: "third", indices: [3] },
-  { span: "two-third", indices: [4] },
-  { span: "full", indices: [5] },
-];
+const PhotoItem = ({
+  photo,
+  index,
+  onClick,
+}: {
+  photo: (typeof photos)[0];
+  index: number;
+  onClick: () => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const y = useTransform(scrollYProgress, [0, 1], [40, -40]);
+  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.95, 1, 1, 0.95]);
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.4, 1, 1, 0.4]);
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{ scale, opacity }}
+      className="group relative overflow-hidden cursor-pointer"
+      onClick={onClick}
+    >
+      <motion.div style={{ y }} className="w-full h-full">
+        <div
+          className="w-full overflow-hidden"
+          style={{ aspectRatio: "2.35 / 1" }}
+        >
+          <img
+            src={photo.src}
+            alt={photo.title}
+            className="w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110"
+            loading="lazy"
+          />
+        </div>
+      </motion.div>
+      <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end pointer-events-none">
+        <div className="p-6 md:p-10">
+          <span className="font-display text-xs tracking-[0.3em] text-muted-foreground block mb-1">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <h3 className="font-display text-xl md:text-2xl tracking-wider text-foreground">
+            {photo.title}
+          </h3>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 const PhotoGrid = () => {
   const [selected, setSelected] = useState<{ src: string; title: string } | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "start start"],
+  });
+  const titleY = useTransform(scrollYProgress, [0, 1], [80, 0]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.6], [0, 1]);
 
   return (
-    <section className="py-24">
-      <div className="max-w-[1800px] mx-auto px-4">
+    <section ref={sectionRef} className="py-24">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8">
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-section text-center mb-16 text-foreground"
+          style={{ y: titleY, opacity: titleOpacity }}
+          className="text-section text-center mb-20 text-foreground"
         >
           RECENT WORK
         </motion.h2>
 
-        <div className="flex flex-col gap-3">
-          {layout.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex gap-3">
-              {row.indices.map((photoIdx) => {
-                const photo = photos[photoIdx];
-                if (!photo) return null;
+        <div className="flex flex-col gap-6">
+          {/* Row 1: Full width hero */}
+          <PhotoItem photo={photos[0]} index={0} onClick={() => setSelected(photos[0])} />
 
-                const widthClass =
-                  row.span === "full"
-                    ? "w-full"
-                    : row.span === "half"
-                    ? "w-1/2"
-                    : row.span === "third"
-                    ? "w-[38%]"
-                    : "w-[62%]";
+          {/* Row 2: Two side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PhotoItem photo={photos[1]} index={1} onClick={() => setSelected(photos[1])} />
+            <PhotoItem photo={photos[2]} index={2} onClick={() => setSelected(photos[2])} />
+          </div>
 
-                return (
-                  <motion.div
-                    key={photo.title}
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ duration: 0.7, delay: photoIdx * 0.05 }}
-                    className={`${widthClass} group relative overflow-hidden cursor-pointer flex-shrink-0`}
-                    style={{ aspectRatio: "2.35 / 1" }}
-                    onClick={() => setSelected(photo)}
-                  >
-                    <img
-                      src={photo.src}
-                      alt={photo.title}
-                      className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end">
-                      <div className="p-8">
-                        <h3 className="font-display text-xl tracking-wider text-foreground">
-                          {photo.title}
-                        </h3>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          ))}
+          {/* Row 3: Full width */}
+          <PhotoItem photo={photos[3]} index={3} onClick={() => setSelected(photos[3])} />
+
+          {/* Row 4: Two side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PhotoItem photo={photos[4]} index={4} onClick={() => setSelected(photos[4])} />
+            <PhotoItem photo={photos[5]} index={5} onClick={() => setSelected(photos[5])} />
+          </div>
         </div>
       </div>
 
