@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import photo1 from "@/assets/photo1.jpg";
 import photo2 from "@/assets/photo2.jpg";
@@ -5,6 +6,7 @@ import photo3 from "@/assets/photo3.jpg";
 import photo4 from "@/assets/photo4.jpg";
 import photo5 from "@/assets/photo5.jpg";
 import photo6 from "@/assets/photo6.jpg";
+import Lightbox from "./Lightbox";
 
 const photos = [
   { src: photo1, title: "Golden Hour" },
@@ -16,6 +18,8 @@ const photos = [
 ];
 
 const PhotoGrid = () => {
+  const [selected, setSelected] = useState<{ src: string; title: string } | null>(null);
+
   return (
     <section className="px-6 py-24">
       <div className="container mx-auto">
@@ -38,6 +42,7 @@ const PhotoGrid = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
               className="group relative overflow-hidden aspect-square cursor-pointer"
+              onClick={() => setSelected(photo)}
             >
               <img
                 src={photo.src}
@@ -56,6 +61,12 @@ const PhotoGrid = () => {
           ))}
         </div>
       </div>
+
+      <Lightbox
+        src={selected?.src ?? null}
+        alt={selected?.title ?? ""}
+        onClose={() => setSelected(null)}
+      />
     </section>
   );
 };
