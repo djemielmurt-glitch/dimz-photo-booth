@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Lightbox from "@/components/Lightbox";
 import photo1 from "@/assets/photo1.jpg";
 import photo2 from "@/assets/photo2.jpg";
 import photo3 from "@/assets/photo3.jpg";
@@ -18,6 +20,8 @@ const allPhotos = [
 ];
 
 const Portfolio = () => {
+  const [selected, setSelected] = useState<{ src: string; title: string } | null>(null);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -40,6 +44,7 @@ const Portfolio = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
                 className="group relative overflow-hidden break-inside-avoid cursor-pointer"
+                onClick={() => setSelected(photo)}
               >
                 <img
                   src={photo.src}
@@ -63,6 +68,12 @@ const Portfolio = () => {
         </div>
       </div>
       <Footer />
+
+      <Lightbox
+        src={selected?.src ?? null}
+        alt={selected?.title ?? ""}
+        onClose={() => setSelected(null)}
+      />
     </div>
   );
 };
